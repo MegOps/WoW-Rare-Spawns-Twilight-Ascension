@@ -1,0 +1,280 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>WoW Rare Spawn Timer</title>
+
+<style>
+  body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 24px; }
+  h1 { margin: 0 0 8px; }
+  .sub { color: #555; margin: 0 0 18px; }
+  .muted { color:#666; font-size:12px; margin-top: 8px; }
+
+  .anchorRow{
+    display:flex;
+    gap: 16px;
+    align-items:flex-end;
+    flex-wrap: nowrap;
+  }
+  .field{ min-width: 0; }
+  .field.rare { flex: 0 0 520px; }
+  .field.time { flex: 0 0 320px; }
+
+  .field label{
+    display:block;
+    font-size: 12px;
+    color:#444;
+    margin: 0 0 6px;
+    line-height: 1.2;
+    height: 32px;
+  }
+
+  select, input{
+    width: 100%;
+    box-sizing: border-box;
+    padding: 10px 12px;
+    font-size: 14px;
+  }
+
+  button{
+    font-size: 14px;
+    padding: 10px 12px;
+    cursor: pointer;
+    margin-right: 10px;
+    margin-top: 10px;
+  }
+
+  table { border-collapse: collapse; width: 100%; margin-top: 14px; }
+  th, td { text-align: left; border-bottom: 1px solid #eee; padding: 10px 8px; }
+  th { background: #fafafa; position: sticky; top: 0; }
+
+  tr.activeRow td { background: #fff4bf; font-weight: 700; }
+  .badge {
+    display:inline-block;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 12px;
+    margin-left: 8px;
+    background: #111;
+    color: #fff;
+    font-weight: 700;
+    vertical-align: middle;
+  }
+
+  @media (max-width: 900px){
+    .anchorRow{ flex-wrap: wrap; }
+    .field.rare, .field.time { flex: 1 1 360px; }
+  }
+</style>
+</head>
+
+<body>
+<h1>WoW Rare Spawn Timer</h1>
+<p class="sub">10-minute rotation. Sorted by soonest spawn.</p>
+
+<div class="anchorRow">
+  <div class="field rare">
+    <label>Anchor rare</label>
+    <select id="anchorRare"></select>
+  </div>
+
+  <div class="field time">
+    <label>Anchor time — snaps to :00/:10/:20/:30/:40/:50</label>
+    <input id="anchorTime" type="text" placeholder="h:mm AM/PM (e.g. 4:50 PM)" />
+  </div>
+</div>
+
+<div>
+  <button id="refreshBtn">Refresh schedule</button>
+  <button id="setNowBtn">Set anchor time = now</button>
+</div>
+
+<div class="muted" id="statusLine"></div>
+
+<table>
+  <thead>
+    <tr>
+      <th>Rare</th>
+      <th>Spawn time</th>
+      <th>Time remaining</th>
+    </tr>
+  </thead>
+  <tbody id="tbody"></tbody>
+</table>
+
+<script>
+(() => {
+  const ROTATION_MINUTES = 10;
+  const ACTIVE_WINDOW_MINUTES = 2;
+
+  const rares = [
+    "Redeye the Skullchewer",
+    "T'aavihan the Unbound",
+    "Ray of Putrescence",
+    "Ix the Bloodfallen",
+    "Commander Ix'vaarha",
+    "Sharfadi, Bulwark of the Night",
+    "Ez'Haadosh the Liminality",
+    "Berg the Spellfist",
+    "Corla, Herald of Twilight",
+    "Void Zealot Devinda",
+    "Asira Dawnslayer",
+    "Archbishop Benedictus",
+    "Nedrand the Eyegorger",
+    "Executioner Lynthelma",
+    "Gustavan, Herald of the End",
+    "Voidclaw Hexathor",
+    "Mirrorvise",
+    "Saligrum the Observer"
+  ];
+
+  const anchorSelect = document.getElementById("anchorRare");
+  const anchorTimeInput = document.getElementById("anchorTime");
+  const tbody = document.getElementById("tbody");
+  const statusLine = document.getElementById("statusLine");
+
+  rares.forEach(r => {
+    const opt = document.createElement("option");
+    opt.value = r;
+    opt.textContent = r;
+    anchorSelect.appendChild(opt);
+  });
+  anchorSelect.value = "Nedrand the Eyegorger";
+
+  const fmtTime = new Intl.DateTimeFormat(undefined, {
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true
+  });
+
+  function minutes(ms){ return ms / 60000; }
+
+  function parseTimeOnly12h(s){
+    const m = /^(\d{1,2}):(\d{2})\s*(AM|PM)$/i.exec((s || "").trim());
+    if (!m) return null;
+
+    let h = parseInt(m[1], 10);
+    const min = parseInt(m[2], 10);
+    const ap = m[3].toUpperCase();
+
+    if (ap === "AM") { if (h === 12) h = 0; }
+    else { if (h !== 12) h += 12; }
+
+    return { hour24: h, minute: min };
+  }
+
+  function formatTimeOnly12h(hour24, minute){
+    const d = new Date(2000,0,1,hour24,minute,0);
+    return fmtTime.format(d);
+  }
+
+  function snapDownTo10(timeObj){
+    return { hour24: timeObj.hour24, minute: Math.floor(timeObj.minute / 10) * 10 };
+  }
+
+  function setAnchorTimeToNowSnapped(){
+    const now = new Date();
+    const snappedM = Math.floor(now.getMinutes() / 10) * 10;
+    anchorTimeInput.value = formatTimeOnly12h(now.getHours(), snappedM);
+  }
+
+  function setDefaultAnchorTime(){ anchorTimeInput.value = "4:50 PM"; }
+
+  function buildAnchorBaseToday(timeOnly){
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth(), now.getDate(), timeOnly.hour24, timeOnly.minute, 0);
+  }
+
+  function humanRemaining(mins){
+    if (mins <= 0 && mins >= -ACTIVE_WINDOW_MINUTES) return "ACTIVE";
+    const sec = Math.max(0, Math.round(mins * 60));
+    const m = Math.floor(sec / 60);
+    if (m < 60) return `${m} min`;
+    return `${Math.floor(m/60)}h ${m%60}m`;
+  }
+
+  function cycleMinutes(){ return rares.length * ROTATION_MINUTES; }
+
+  function computeLastAndNext(base, now){
+    const cycleMin = cycleMinutes();
+    const diffMin = minutes(now - base);
+    const k = Math.floor(diffMin / cycleMin);
+    const last = new Date(base.getTime() + k * cycleMin * 60000);
+    const next = new Date(last.getTime() + cycleMin * 60000);
+    return { last, next };
+  }
+
+  function render(){
+    const anchorName = anchorSelect.value;
+    const anchorIndex = rares.indexOf(anchorName);
+
+    let t = parseTimeOnly12h(anchorTimeInput.value);
+    if (anchorIndex < 0 || !t){
+      tbody.innerHTML = `<tr><td colspan="3"><b>Invalid anchor time.</b></td></tr>`;
+      statusLine.textContent = "";
+      return;
+    }
+
+    const snapped = snapDownTo10(t);
+    anchorTimeInput.value = formatTimeOnly12h(snapped.hour24, snapped.minute);
+
+    const anchorBase = buildAnchorBaseToday(snapped);
+    const now = new Date();
+
+    const rows = rares.map((rare, idx) => {
+      const offsetSteps = idx - anchorIndex;
+      const base = new Date(anchorBase.getTime() + offsetSteps * ROTATION_MINUTES * 60000);
+
+      const { last, next } = computeLastAndNext(base, now);
+
+      const sinceLastMin = minutes(now - last);
+      const untilNextMin = minutes(next - now);
+      const isActive = (sinceLastMin >= 0 && sinceLastMin <= ACTIVE_WINDOW_MINUTES);
+
+      const sortKey = isActive ? -1 : untilNextMin;
+      const displayTime = isActive ? last : next;
+      const remainingForDisplay = isActive ? -sinceLastMin : untilNextMin;
+
+      return { rare, isActive, sortKey, displayTime, remainingForDisplay };
+    });
+
+    rows.sort((a, b) => a.sortKey - b.sortKey);
+
+    tbody.innerHTML = "";
+    rows.forEach(r => {
+      const tr = document.createElement("tr");
+      if (r.isActive) tr.className = "activeRow";
+
+      const tdName = document.createElement("td");
+      tdName.textContent = r.rare;
+      if (r.isActive){
+        const badge = document.createElement("span");
+        badge.className = "badge";
+        badge.textContent = "ACTIVE";
+        tdName.appendChild(badge);
+      }
+
+      const tdTime = document.createElement("td");
+      tdTime.textContent = fmtTime.format(r.displayTime);
+
+      const tdRemain = document.createElement("td");
+      tdRemain.textContent = humanRemaining(r.remainingForDisplay);
+
+      tr.appendChild(tdName);
+      tr.appendChild(tdTime);
+      tr.appendChild(tdRemain);
+      tbody.appendChild(tr);
+    });
+  }
+
+  document.getElementById("refreshBtn").onclick = render;
+  document.getElementById("setNowBtn").onclick = () => { setAnchorTimeToNowSnapped(); render(); };
+
+  setDefaultAnchorTime();
+  render();
+  setInterval(render, 1000);
+})();
+</script>
+</body>
+</html>
