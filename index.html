@@ -3,14 +3,79 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>WoW Twilight Ascension Spawn Timer</title>
+<title>WoW Rare Spawn Timer</title>
 
 <style>
-  body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 24px; }
-  h1 { margin: 0 0 8px; }
-  .sub { color: #555; margin: 0 0 18px; }
-  .muted { color:#666; font-size:12px; margin-top: 8px; }
+  :root{
+    --bg:#ffffff;
+    --fg:#111111;
+    --muted:#666;
+    --border:#e5e7eb;
+    --thbg:#f3f4f6;
+    --row-alt:#fafafa;
+    --active:#fff4bf;
 
+    --badge-bg:#111;
+    --badge-fg:#fff;
+
+    --btn-bg:#f3f3f3;
+    --btn-fg:#111;
+
+    --code-bg:#f3f4f6;
+    --shadow: 0 6px 20px rgba(0,0,0,.08);
+  }
+
+  /* Softer dark palette + clearer separators */
+  body.dark{
+    --bg:#161a22;
+    --fg:#e6eaf2;
+    --muted:#9aa4b2;
+    --border:#2a3240;
+    --thbg:#1f2633;
+    --row-alt:#1b212d;
+    --active:#2a2f1f;
+
+    --badge-bg:#ffd54d;
+    --badge-fg:#111;
+
+    --btn-bg:#222938;
+    --btn-fg:#e6eaf2;
+
+    --code-bg:#222938;
+    --shadow: 0 10px 28px rgba(0,0,0,.35);
+  }
+
+  body{
+    font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    margin: 24px;
+    background:var(--bg);
+    color:var(--fg);
+  }
+
+  h1 { margin: 0 0 6px; }
+  .sub { color: var(--muted); margin: 0 0 14px; }
+  .muted { color: var(--muted); font-size:12px; margin-top: 8px; }
+
+  /* Header row with theme button pinned top-right (better spot) */
+  .headerRow{
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap: 12px;
+    margin-bottom: 6px;
+  }
+
+  .themeBtn{
+    position: sticky;
+    top: 12px;
+    align-self: flex-start;
+    margin: 0;
+    border-radius: 999px;
+    box-shadow: var(--shadow);
+    white-space: nowrap;
+  }
+
+  /* Controls area */
   .anchorRow{
     display:flex;
     gap: 16px;
@@ -24,7 +89,7 @@
   .field label{
     display:block;
     font-size: 12px;
-    color:#444;
+    color: var(--muted);
     margin: 0 0 6px;
     line-height: 1.2;
     height: 32px;
@@ -35,78 +100,134 @@
     box-sizing: border-box;
     padding: 10px 12px;
     font-size: 14px;
+    background: var(--bg);
+    color: var(--fg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
   }
 
-  button{
+  .btnRow button{
     font-size: 14px;
     padding: 10px 12px;
     cursor: pointer;
     margin-right: 10px;
     margin-top: 10px;
+    background: var(--btn-bg);
+    color: var(--btn-fg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
   }
+  .btnRow button:active{ transform: translateY(1px); }
 
-  table { border-collapse: collapse; width: 100%; margin-top: 14px; }
-  th, td { text-align: left; border-bottom: 1px solid #eee; padding: 10px 8px; }
-  th { background: #fafafa; position: sticky; top: 0; }
+  table { border-collapse: collapse; width: 100%; margin-top: 14px; font-size: 14px; }
+  th, td { text-align: left; border-bottom: 1px solid var(--border); padding: 10px 10px; vertical-align: top; }
+  th {
+    background: var(--thbg);
+    position: sticky;
+    top: 0;
+    font-weight: 650;
+    letter-spacing: .2px;
+  }
+  tbody tr:nth-child(even) td { background: var(--row-alt); } /* column tracking */
 
-  tr.activeRow td { background: #fff4bf; font-weight: 700; }
+  tr.activeRow td { background: var(--active) !important; font-weight: 750; }
+
   .badge {
     display:inline-block;
     padding: 2px 8px;
     border-radius: 999px;
     font-size: 12px;
     margin-left: 8px;
-    background: #111;
-    color: #fff;
-    font-weight: 700;
+    background: var(--badge-bg);
+    color: var(--badge-fg);
+    font-weight: 800;
     vertical-align: middle;
+  }
+
+  code{
+    background: var(--code-bg);
+    padding: 3px 6px;
+    border-radius: 8px;
+    font-size: 12px;
+    border: 1px solid var(--border);
+  }
+
+  .copyBtn{
+    padding: 7px 10px;
+    font-size: 13px;
+    margin: 0;
+    border-radius: 10px;
   }
 
   @media (max-width: 900px){
     .anchorRow{ flex-wrap: wrap; }
     .field.rare, .field.time { flex: 1 1 360px; }
+    .themeBtn{ top: 8px; }
   }
 </style>
 </head>
 
 <body>
-<h1>WoW Twilight Ascension Rare Spawn Timer</h1>
-<p class="sub">10-minute rotation. Sorted by soonest spawn.</p>
-
-<div class="anchorRow">
-  <div class="field rare">
-    <label>Anchor rare</label>
-    <select id="anchorRare"></select>
+  <div class="headerRow">
+    <div>
+      <h1>WoW Rare Spawn Timer</h1>
+      <p class="sub">10-minute rotation. Sorted by soonest spawn.</p>
+    </div>
+    <button class="themeBtn" id="toggleThemeBtn" title="Toggle night mode">🌙 Night mode</button>
   </div>
 
-  <div class="field time">
-    <label>Anchor time — snaps to :00/:10/:20/:30/:40/:50</label>
-    <input id="anchorTime" type="text" placeholder="h:mm AM/PM (e.g. 4:50 PM)" />
+  <div class="anchorRow">
+    <div class="field rare">
+      <label>Anchor rare</label>
+      <select id="anchorRare"></select>
+    </div>
+
+    <div class="field time">
+      <label>Anchor time — snaps to :00/:10/:20/:30/:40/:50</label>
+      <input id="anchorTime" type="text" placeholder="h:mm AM/PM (e.g. 4:50 PM)" />
+    </div>
   </div>
-</div>
 
-<div>
-  <button id="refreshBtn">Refresh schedule</button>
-  <button id="setNowBtn">Set anchor time = now</button>
-</div>
+  <div class="btnRow">
+    <button id="refreshBtn">Refresh schedule</button>
+    <button id="setNowBtn">Set anchor time = now</button>
+  </div>
 
-<div class="muted" id="statusLine"></div>
+  <div class="muted" id="statusLine"></div>
 
-<table>
-  <thead>
-    <tr>
-      <th>Rare</th>
-      <th>Spawn time</th>
-      <th>Time remaining</th>
-    </tr>
-  </thead>
-  <tbody id="tbody"></tbody>
-</table>
+  <table>
+    <thead>
+      <tr>
+        <th>Rare</th>
+        <th>Spawn time</th>
+        <th>Time remaining</th>
+        <th>Location</th>
+        <th>Waypoint</th>
+      </tr>
+    </thead>
+    <tbody id="tbody"></tbody>
+  </table>
 
 <script>
 (() => {
   const ROTATION_MINUTES = 10;
   const ACTIVE_WINDOW_MINUTES = 2;
+
+  // --- Night mode toggle (remembered) ---
+  const themeKey = "wowRareTimerTheme";
+  function applyTheme(theme){
+    document.body.classList.toggle("dark", theme === "dark");
+    document.getElementById("toggleThemeBtn").textContent = theme === "dark" ? "☀️ Day mode" : "🌙 Night mode";
+  }
+  const savedTheme = localStorage.getItem(themeKey);
+  applyTheme(savedTheme === "dark" ? "dark" : "light");
+
+  document.getElementById("toggleThemeBtn").onclick = () => {
+    const isDark = document.body.classList.contains("dark");
+    const next = isDark ? "light" : "dark";
+    localStorage.setItem(themeKey, next);
+    applyTheme(next);
+  };
 
   const rares = [
     "Redeye the Skullchewer","T'aavihan the Unbound","Ray of Putrescence","Ix the Bloodfallen",
@@ -115,6 +236,28 @@
     "Archbishop Benedictus","Nedrand the Eyegorger","Executioner Lynthelma",
     "Gustavan, Herald of the End","Voidclaw Hexathor","Mirrorvise","Saligrum the Observer"
   ];
+
+  // --- Rare metadata: Location + /way string to copy ---
+  const rareMeta = {
+    "Redeye the Skullchewer":      { loc:"65.2, 52.2", way:"/way #241 65.2 52.2 Redeye the Skullchewer" },
+    "T'aavihan the Unbound":       { loc:"57.6, 75.6", way:"/way #241 57.6 75.6 T'aavihan the Unbound" },
+    "Ray of Putrescence":          { loc:"71.2, 29.9", way:"/way #241 71.2 29.9 Ray of Putrescence" },
+    "Ix the Bloodfallen":          { loc:"46.7, 25.2", way:"/way #241 46.7 25.2 Ix the Bloodfallen" },
+    "Commander Ix'vaarha":         { loc:"45.2, 48.8", way:"/way #241 45.2 48.8 Commander Ix'vaarha" },
+    "Sharfadi, Bulwark of the Night": { loc:"41.8, 16.5", way:"/way #241 41.8 16.5 Sharfadi, Bulwark of the Night" },
+    "Ez'Haadosh the Liminality":   { loc:"65.2, 52.2", way:"/way #241 65.2 52.2 Ez'Haadosh the Liminality" },
+    "Berg the Spellfist":          { loc:"57.6, 75.6", way:"/way #241 57.6 75.6 Berg the Spellfist" },
+    "Corla, Herald of Twilight":   { loc:"71.2, 29.9", way:"/way #241 71.2 29.9 Corla, Herald of Twilight" },
+    "Void Zealot Devinda":         { loc:"46.7, 25.2", way:"/way #241 46.7 25.2 Void Zealot Devinda" },
+    "Asira Dawnslayer":            { loc:"45.2, 49.2", way:"/way #241 45.2 49.2 Asira Dawnslayer" },
+    "Archbishop Benedictus":       { loc:"41.8, 16.5", way:"/way #241 41.8 16.5 Archbishop Benedictus" },
+    "Nedrand the Eyegorger":       { loc:"65.2, 52.2", way:"/way #241 65.2 52.2 Nedrand the Eyegorger" },
+    "Executioner Lynthelma":       { loc:"57.6, 75.6", way:"/way #241 57.6 75.6 Executioner Lynthelma" },
+    "Gustavan, Herald of the End": { loc:"71.2, 29.9", way:"/way #241 71.2 29.9 Gustavan, Herald of the End" },
+    "Voidclaw Hexathor":           { loc:"46.7, 25.2", way:"/way #241 46.7 25.2 Voidclaw Hexathor" },
+    "Mirrorvise":                  { loc:"45.2, 49.2", way:"/way #241 45.2 49.2 Mirrorvise" },
+    "Saligrum the Observer":       { loc:"41.8, 16.5", way:"/way #241 41.8 16.5 Saligrum the Observer" },
+  };
 
   const anchorSelect = document.getElementById("anchorRare");
   const anchorTimeInput = document.getElementById("anchorTime");
@@ -157,7 +300,7 @@
   }
 
   function setDefaultAnchorTime(){
-    setAnchorTimeToNowSnapped(); // SMART DEFAULT
+    setAnchorTimeToNowSnapped();
   }
 
   function buildAnchorBaseToday(timeOnly){
@@ -182,16 +325,31 @@
     return { last, next };
   }
 
+  async function copyText(text){
+    try{
+      await navigator.clipboard.writeText(text);
+      return true;
+    }catch(e){
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      document.body.appendChild(ta);
+      ta.select();
+      try{ document.execCommand("copy"); } finally { document.body.removeChild(ta); }
+      return true;
+    }
+  }
+
   function render(){
     const anchorIndex = rares.indexOf(anchorSelect.value);
     let t = parseTimeOnly12h(anchorTimeInput.value);
     if (anchorIndex < 0 || !t){
-      tbody.innerHTML = `<tr><td colspan="3"><b>Invalid anchor time.</b></td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="5"><b>Invalid anchor time.</b></td></tr>`;
       return;
     }
 
     const snapped = snapDownTo10(t);
     anchorTimeInput.value = formatTimeOnly12h(snapped.hour24, snapped.minute);
+
     const anchorBase = buildAnchorBaseToday(snapped);
     const now = new Date();
 
@@ -213,25 +371,59 @@
     rows.forEach(r=>{
       const tr = document.createElement("tr");
       if(r.isActive) tr.className="activeRow";
-      const td1=document.createElement("td");
-      td1.textContent=r.rare;
-      if(r.isActive){ const b=document.createElement("span"); b.className="badge"; b.textContent="ACTIVE"; td1.appendChild(b);}
-      const td2=document.createElement("td"); td2.textContent=fmtTime.format(r.displayTime);
-      const td3=document.createElement("td"); td3.textContent=humanRemaining(r.remaining);
-      tr.append(td1,td2,td3);
+
+      const meta = rareMeta[r.rare] || { loc:"", way:"" };
+
+      const tdRare = document.createElement("td");
+      tdRare.textContent = r.rare;
+      if(r.isActive){
+        const badge = document.createElement("span");
+        badge.className = "badge";
+        badge.textContent = "ACTIVE";
+        tdRare.appendChild(badge);
+      }
+
+      const tdTime = document.createElement("td");
+      tdTime.textContent = fmtTime.format(r.displayTime);
+
+      const tdRemain = document.createElement("td");
+      tdRemain.textContent = humanRemaining(r.remaining);
+
+      const tdLoc = document.createElement("td");
+      tdLoc.textContent = meta.loc || "";
+
+      const tdWay = document.createElement("td");
+      if(meta.way){
+        const code = document.createElement("code");
+        code.textContent = meta.way;
+        code.style.marginRight = "8px";
+        code.style.display = "inline-block";
+
+        const btn = document.createElement("button");
+        btn.className = "copyBtn";
+        btn.textContent = "Copy";
+        btn.onclick = async () => {
+          const ok = await copyText(meta.way);
+          statusLine.textContent = ok ? `Copied: ${meta.way}` : "Copy failed.";
+          setTimeout(()=>{ statusLine.textContent=""; }, 1500);
+        };
+
+        tdWay.appendChild(code);
+        tdWay.appendChild(btn);
+      }
+
+      tr.append(tdRare, tdTime, tdRemain, tdLoc, tdWay);
       tbody.appendChild(tr);
     });
   }
 
-  document.getElementById("refreshBtn").onclick=render;
-  document.getElementById("setNowBtn").onclick=()=>{setAnchorTimeToNowSnapped();render();};
+  document.getElementById("refreshBtn").onclick = render;
+  document.getElementById("setNowBtn").onclick = () => { setAnchorTimeToNowSnapped(); render(); };
 
   setDefaultAnchorTime();
   render();
-  setInterval(render,1000);
+  setInterval(render, 1000);
 })();
 </script>
 </body>
 </html>
-
-
