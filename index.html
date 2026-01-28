@@ -1,538 +1,666 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>WoW Rare Spawn Timer</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>WoW Rare Spawn Timer</title>
 
-<style>
-  /* Day mode (easier to read) */
-  :root{
-    --bg:#f7f8fb;
-    --panel:#ffffff;
-    --fg:#0b1220;
-    --muted:#4b5563;
-    --border:#d6dbe6;
-    --thbg:#eef2f7;
-    --row-alt:#f9fbff;
-    --active:#fff2b3;
+    <style>
+        /* Day mode (easier to read) */
+        :root {
+            --bg: #f7f8fb;
+            --panel: #ffffff;
+            --fg: #0b1220;
+            --muted: #4b5563;
+            --border: #d6dbe6;
+            --thbg: #eef2f7;
+            --row-alt: #f9fbff;
+            --active: #fff2b3;
+            --badge-bg: #111827;
+            --badge-fg: #ffffff;
+            --btn-bg: #eef2f7;
+            --btn-fg: #0b1220;
+            --shadow: 0 10px 28px rgba(15, 23, 42, .10);
+        }
 
-    --badge-bg:#111827;
-    --badge-fg:#ffffff;
+        /* Night mode (default) */
+        body.dark {
+            --bg: #0f1420;
+            --panel: #141b2a;
+            --fg: #e8eef9;
+            --muted: #aab6cb;
+            --border: #2a3550;
+            --thbg: #1a2336;
+            --row-alt: #131b2b;
+            --active: #2a2f1f;
+            --badge-bg: #ffd54d;
+            --badge-fg: #111;
+            --btn-bg: #1b2438;
+            --btn-fg: #e8eef9;
+            --shadow: 0 16px 36px rgba(0,0,0,.45);
+        }
 
-    --btn-bg:#eef2f7;
-    --btn-fg:#0b1220;
+        body {
+            font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+            margin: 24px;
+            background: var(--bg);
+            color: var(--fg);
+        }
 
-    --shadow: 0 10px 28px rgba(15, 23, 42, .10);
-  }
+        .card {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 16px;
+            box-shadow: var(--shadow);
+        }
 
-  /* Night mode (default) */
-  body.dark{
-    --bg:#0f1420;
-    --panel:#141b2a;
-    --fg:#e8eef9;
-    --muted:#aab6cb;
-    --border:#2a3550;
-    --thbg:#1a2336;
-    --row-alt:#131b2b;
-    --active:#2a2f1f;
+        h1 {
+            margin: 0 0 6px;
+            letter-spacing: .2px;
+        }
 
-    --badge-bg:#ffd54d;
-    --badge-fg:#111;
+        .sub {
+            color: var(--muted);
+            margin: 0 0 14px;
+        }
 
-    --btn-bg:#1b2438;
-    --btn-fg:#e8eef9;
+        .muted {
+            color: var(--muted);
+            font-size: 12px;
+            margin-top: 8px;
+        }
 
-    --shadow: 0 16px 36px rgba(0,0,0,.45);
-  }
+        .headerRow {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 10px;
+        }
 
-  body{
-    font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-    margin: 24px;
-    background:var(--bg);
-    color:var(--fg);
-  }
+        .themeBtn {
+            position: sticky;
+            top: 12px;
+            align-self: flex-start;
+            margin: 0;
+            border-radius: 999px;
+            white-space: nowrap;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+            background: var(--btn-bg);
+            color: var(--btn-fg);
+            padding: 10px 12px;
+            cursor: pointer;
+            touch-action: manipulation;
+        }
 
-  .card{
-    background: var(--panel);
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    padding: 16px;
-    box-shadow: var(--shadow);
-  }
+            .themeBtn:active {
+                transform: translateY(1px);
+            }
 
-  h1 { margin: 0 0 6px; letter-spacing: .2px; }
-  .sub { color: var(--muted); margin: 0 0 14px; }
-  .muted { color: var(--muted); font-size:12px; margin-top: 8px; }
+        .anchorRow {
+            display: flex;
+            gap: 16px;
+            align-items: flex-end;
+            flex-wrap: nowrap;
+        }
 
-  .headerRow{
-    display:flex;
-    align-items:flex-start;
-    justify-content:space-between;
-    gap: 12px;
-    margin-bottom: 10px;
-  }
+        .field {
+            min-width: 0;
+        }
 
-  .themeBtn{
-    position: sticky;
-    top: 12px;
-    align-self: flex-start;
-    margin: 0;
-    border-radius: 999px;
-    white-space: nowrap;
-    box-shadow: var(--shadow);
-    border: 1px solid var(--border);
-    background: var(--btn-bg);
-    color: var(--btn-fg);
-    padding: 10px 12px;
-    cursor: pointer;
-    touch-action: manipulation;
-  }
-  .themeBtn:active{ transform: translateY(1px); }
+            .field.rare {
+                flex: 0 0 520px;
+            }
 
-  .anchorRow{
-    display:flex;
-    gap: 16px;
-    align-items:flex-end;
-    flex-wrap: nowrap;
-  }
-  .field{ min-width: 0; }
-  .field.rare { flex: 0 0 520px; }
-  .field.time { flex: 0 0 320px; }
+            .field.time {
+                flex: 0 0 320px;
+            }
 
-  .field label{
-    display:block;
-    font-size: 12px;
-    color: var(--muted);
-    margin: 0 0 6px;
-    line-height: 1.2;
-    height: 32px;
-  }
+            .field label {
+                display: block;
+                font-size: 12px;
+                color: var(--muted);
+                margin: 0 0 6px;
+                line-height: 1.2;
+                height: 32px;
+            }
 
-  select, input{
-    width: 100%;
-    box-sizing: border-box;
-    padding: 10px 12px;
-    font-size: 14px;
-    background: var(--panel);
-    color: var(--fg);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    outline: none;
-  }
-  select:focus, input:focus{
-    border-color: #6b8cff;
-    box-shadow: 0 0 0 3px rgba(107,140,255,.20);
-  }
+        select, input {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 10px 12px;
+            font-size: 14px;
+            background: var(--panel);
+            color: var(--fg);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            outline: none;
+        }
 
-  .btnRow button{
-    font-size: 14px;
-    padding: 10px 12px;
-    cursor: pointer;
-    margin-right: 10px;
-    margin-top: 10px;
-    background: var(--btn-bg);
-    color: var(--btn-fg);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    touch-action: manipulation;
-  }
-  .btnRow button:active{ transform: translateY(1px); }
+            select:focus, input:focus {
+                border-color: #6b8cff;
+                box-shadow: 0 0 0 3px rgba(107,140,255,.20);
+            }
 
-  table {
-    border-collapse: separate;
-    border-spacing: 0;
-    width: 100%;
-    margin-top: 14px;
-    font-size: 14px;
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    overflow: hidden;
-  }
-  th, td {
-    text-align: left;
-    border-bottom: 1px solid var(--border);
-    padding: 10px 12px;
-    vertical-align: top;
-  }
-  th {
-    background: var(--thbg);
-    position: sticky;
-    top: 0;
-    font-weight: 700;
-    letter-spacing: .2px;
-    z-index: 1;
-  }
-  tbody tr:nth-child(even) td { background: var(--row-alt); }
-  tbody tr:hover td { filter: brightness(1.03); }
+        .btnRow {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 10px;
+        }
 
-  tr.activeRow td { background: var(--active) !important; font-weight: 800; }
+            .btnRow button {
+                font-size: 14px;
+                padding: 10px 12px;
+                cursor: pointer;
+                background: var(--btn-bg);
+                color: var(--btn-fg);
+                border: 1px solid var(--border);
+                border-radius: 10px;
+                touch-action: manipulation;
+            }
 
-  .badge {
-    display:inline-block;
-    padding: 2px 8px;
-    border-radius: 999px;
-    font-size: 12px;
-    margin-left: 8px;
-    background: var(--badge-bg);
-    color: var(--badge-fg);
-    font-weight: 900;
-    vertical-align: middle;
-  }
+                .btnRow button:active {
+                    transform: translateY(1px);
+                }
 
-  .copyWrap{
-    display:inline-flex;
-    align-items:center;
-    gap: 8px;
-  }
+        table {
+            border-collapse: separate;
+            border-spacing: 0;
+            width: 100%;
+            margin-top: 14px;
+            font-size: 14px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+        }
 
-  .copyBtn{
-    padding: 7px 10px;
-    font-size: 13px;
-    margin: 0;
-    border-radius: 10px;
-    background: var(--btn-bg);
-    color: var(--btn-fg);
-    border: 1px solid var(--border);
-    cursor: pointer;
-    touch-action: manipulation;
-  }
-  .copyBtn:active{ transform: translateY(1px); }
-  .copyBtn[disabled]{ opacity: .7; cursor: default; }
+        th, td {
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+            padding: 10px 12px;
+            vertical-align: top;
+        }
 
-  .copyNote{
-    font-size: 12px;
-    color: var(--muted);
-    min-width: 62px;
-  }
+        th {
+            background: var(--thbg);
+            position: sticky;
+            top: 0;
+            font-weight: 700;
+            letter-spacing: .2px;
+            z-index: 1;
+        }
 
-  /* ✅ Mobile: stack controls, make tap targets larger, and make table horizontally scrollable */
-  @media (max-width: 680px){
-    body{ margin: 14px; }
-    .card{ padding: 12px; border-radius: 12px; }
+        tbody tr:nth-child(even) td {
+            background: var(--row-alt);
+        }
 
-    h1{ font-size: 18px; }
-    .sub{ font-size: 13px; margin-bottom: 12px; }
+        tbody tr:hover td {
+            filter: brightness(1.03);
+        }
 
-    .headerRow{ flex-direction: column; align-items: stretch; gap: 10px; }
-    .themeBtn{ position: static; width: 100%; }
+        tr.activeRow td {
+            background: var(--active) !important;
+            font-weight: 800;
+        }
 
-    .anchorRow{ flex-direction: column; align-items: stretch; gap: 10px; }
-    .field.rare, .field.time{ flex: 1 1 auto; }
-    .field label{ height: auto; }
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 999px;
+            font-size: 12px;
+            margin-left: 8px;
+            background: var(--badge-bg);
+            color: var(--badge-fg);
+            font-weight: 900;
+            vertical-align: middle;
+        }
 
-    select, input{ font-size: 16px; padding: 12px 12px; } /* 16px helps avoid iOS zoom */
-    .btnRow{
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 10px;
-      margin-top: 10px;
-    }
-    .btnRow button{
-      width: 100%;
-      margin: 0;
-      padding: 12px 12px;
-      font-size: 16px;
-    }
+        .copyWrap {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
 
-    .copyBtn{ padding: 10px 12px; font-size: 15px; }
-    .copyNote{ min-width: 0; }
+        .copyBtn {
+            padding: 7px 10px;
+            font-size: 13px;
+            margin: 0;
+            border-radius: 10px;
+            background: var(--btn-bg);
+            color: var(--btn-fg);
+            border: 1px solid var(--border);
+            cursor: pointer;
+            touch-action: manipulation;
+        }
 
-    table{
-      display: block;
-      overflow-x: auto;
-      -webkit-overflow-scrolling: touch;
-      border-radius: 12px;
-    }
-    thead, tbody, tr{ width: 100%; }
-    th, td{ white-space: nowrap; }
-  }
+            .copyBtn:active {
+                transform: translateY(1px);
+            }
 
-  /* ✅ FIX: only apply the "wrap + 360px basis" layout to TABLET widths, not phones */
-  @media (min-width: 681px) and (max-width: 900px){
-    .anchorRow{ flex-wrap: wrap; }
-    .field.rare, .field.time { flex: 1 1 360px; }
-    .themeBtn{ top: 8px; }
-  }
-</style>
+            .copyBtn[disabled] {
+                opacity: .7;
+                cursor: default;
+            }
+
+        .copyNote {
+            font-size: 12px;
+            color: var(--muted);
+            min-width: 62px;
+        }
+
+        /* ✅ Mobile: stack controls, make tap targets larger, and make table horizontally scrollable */
+        @media (max-width: 680px) {
+            body {
+                margin: 14px;
+            }
+
+            .card {
+                padding: 12px;
+                border-radius: 12px;
+            }
+
+            h1 {
+                font-size: 18px;
+            }
+
+            .sub {
+                font-size: 13px;
+                margin-bottom: 12px;
+            }
+
+            .headerRow {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 10px;
+            }
+
+            .themeBtn {
+                position: static;
+                width: 100%;
+            }
+
+            .anchorRow {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 10px;
+            }
+
+            .field.rare, .field.time {
+                flex: 1 1 auto;
+            }
+
+            .field label {
+                height: auto;
+            }
+
+            select, input {
+                font-size: 16px;
+                padding: 12px 12px;
+            }
+            /* 16px helps avoid iOS zoom */
+
+            .btnRow {
+                display: grid;
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+
+                .btnRow button {
+                    width: 100%;
+                    padding: 12px 12px;
+                    font-size: 16px;
+                }
+
+            .copyBtn {
+                padding: 10px 12px;
+                font-size: 15px;
+            }
+
+            .copyNote {
+                min-width: 0;
+            }
+
+            table {
+                display: block;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                border-radius: 12px;
+            }
+
+            thead, tbody, tr {
+                width: 100%;
+            }
+
+            th, td {
+                white-space: nowrap;
+            }
+        }
+
+        /* Slightly wider breakpoint to keep existing behavior */
+        @media (max-width: 900px) {
+            .anchorRow {
+                flex-wrap: wrap;
+            }
+
+            .field.rare, .field.time {
+                flex: 1 1 360px;
+            }
+
+            .themeBtn {
+                top: 8px;
+            }
+        }
+    </style>
 </head>
 
 <body>
-  <div class="card">
-    <div class="headerRow">
-      <div>
-        <h1>WoW Rare Spawn Timer</h1>
-        <p class="sub">10-minute rotation. Sorted by soonest spawn.</p>
-      </div>
-      <button class="themeBtn" id="toggleThemeBtn" title="Toggle theme">🌙 Night mode</button>
+    <div class="card">
+        <div class="headerRow">
+            <div>
+                <h1>WoW Rare Spawn Timer</h1>
+                <p class="sub">10-minute rotation. Sorted by soonest spawn.</p>
+            </div>
+            <button class="themeBtn" id="toggleThemeBtn" title="Toggle theme">🌙 Night mode</button>
+        </div>
+
+        <div class="anchorRow">
+            <div class="field rare">
+                <label>Anchor rare</label>
+                <select id="anchorRare"></select>
+            </div>
+
+            <div class="field time">
+                <label>Anchor time — snaps to :00/:10/:20/:30/:40/:50</label>
+                <input id="anchorTime" type="text" placeholder="h:mm AM/PM (e.g. 4:50 PM)" />
+            </div>
+        </div>
+
+        <div class="btnRow">
+            <button id="refreshBtn">Refresh schedule</button>
+            <button id="setNowBtn">Set anchor time = now</button>
+        </div>
+
+        <div class="muted" id="statusLine"></div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Rare</th>
+                    <th>Spawn time</th>
+                    <th>Time remaining</th>
+                    <th>Location</th>
+                    <th>Copy</th>
+                </tr>
+            </thead>
+            <tbody id="tbody"></tbody>
+        </table>
     </div>
 
-    <div class="anchorRow">
-      <div class="field rare">
-        <label>Anchor rare</label>
-        <select id="anchorRare"></select>
-      </div>
+    <script>
+        (() => {
+            const ROTATION_MINUTES = 10;
 
-      <div class="field time">
-        <label>Anchor time — snaps to :00/:10/:20/:30/:40/:50</label>
-        <input id="anchorTime" type="text" placeholder="h:mm AM/PM (e.g. 4:50 PM)" />
-      </div>
-    </div>
+            // Keep "ACTIVE" / highlighted row for 4 minutes after it spawns
+            const ACTIVE_WINDOW_MINUTES = 4;
 
-    <div class="btnRow">
-      <button id="refreshBtn">Refresh schedule</button>
-      <button id="setNowBtn">Set anchor time = now</button>
-    </div>
+            // --- Theme (night mode default) ---
+            const themeKey = "wowRareTimerTheme";
+            function applyTheme(theme) {
+                document.body.classList.toggle("dark", theme === "dark");
+                document.getElementById("toggleThemeBtn").textContent =
+                    theme === "dark" ? "☀️ Day mode" : "🌙 Night mode";
+            }
 
-    <div class="muted" id="statusLine"></div>
+            const savedTheme = localStorage.getItem(themeKey);
+            applyTheme(savedTheme ? savedTheme : "dark");
 
-    <table>
-      <thead>
-        <tr>
-          <th>Rare</th>
-          <th>Spawn time</th>
-          <th>Time remaining</th>
-          <th>Location</th>
-          <th>Copy</th>
-        </tr>
-      </thead>
-      <tbody id="tbody"></tbody>
-    </table>
-  </div>
+            document.getElementById("toggleThemeBtn").onclick = () => {
+                const isDark = document.body.classList.contains("dark");
+                const next = isDark ? "light" : "dark";
+                localStorage.setItem(themeKey, next);
+                applyTheme(next);
+            };
 
-<script>
-(() => {
-  const ROTATION_MINUTES = 10;
+            const rares = [
+                "Redeye the Skullchewer", "T'aavihan the Unbound", "Ray of Putrescence", "Ix the Bloodfallen",
+                "Commander Ix'vaarha", "Sharfadi, Bulwark of the Night", "Ez'Haadosh the Liminality",
+                "Berg the Spellfist", "Corla, Herald of Twilight", "Void Zealot Devinda", "Asira Dawnslayer",
+                "Archbishop Benedictus", "Nedrand the Eyegorger", "Executioner Lynthelma",
+                "Gustavan, Herald of the End", "Voidclaw Hexathor", "Mirrorvise", "Saligrum the Observer"
+            ];
 
-  // Keep "ACTIVE" / highlighted row for 4 minutes after it spawns
-  const ACTIVE_WINDOW_MINUTES = 4;
+            // Location display + hidden /way command to copy
+            const rareMeta = {
+                "Redeye the Skullchewer": { loc: "65.2, 52.2", way: "/way #241 65.2 52.2 Redeye the Skullchewer" },
+                "T'aavihan the Unbound": { loc: "57.6, 75.6", way: "/way #241 57.6 75.6 T'aavihan the Unbound" },
+                "Ray of Putrescence": { loc: "71.2, 29.9", way: "/way #241 71.2 29.9 Ray of Putrescence" },
+                "Ix the Bloodfallen": { loc: "46.7, 25.2", way: "/way #241 46.7 25.2 Ix the Bloodfallen" },
+                "Commander Ix'vaarha": { loc: "45.2, 48.8", way: "/way #241 45.2 48.8 Commander Ix'vaarha" },
+                "Sharfadi, Bulwark of the Night": { loc: "41.8, 16.5", way: "/way #241 41.8 16.5 Sharfadi, Bulwark of the Night" },
+                "Ez'Haadosh the Liminality": { loc: "65.2, 52.2", way: "/way #241 65.2 52.2 Ez'Haadosh the Liminality" },
+                "Berg the Spellfist": { loc: "57.6, 75.6", way: "/way #241 57.6 75.6 Berg the Spellfist" },
+                "Corla, Herald of Twilight": { loc: "71.2, 29.9", way: "/way #241 71.2 29.9 Corla, Herald of Twilight" },
+                "Void Zealot Devinda": { loc: "46.7, 25.2", way: "/way #241 46.7 25.2 Void Zealot Devinda" },
+                "Asira Dawnslayer": { loc: "45.2, 49.2", way: "/way #241 45.2 49.2 Asira Dawnslayer" },
+                "Archbishop Benedictus": { loc: "41.8, 16.5", way: "/way #241 41.8 16.5 Archbishop Benedictus" },
+                "Nedrand the Eyegorger": { loc: "65.2, 52.2", way: "/way #241 65.2 52.2 Nedrand the Eyegorger" },
+                "Executioner Lynthelma": { loc: "57.6, 75.6", way: "/way #241 57.6 75.6 Executioner Lynthelma" },
+                "Gustavan, Herald of the End": { loc: "71.2, 29.9", way: "/way #241 71.2 29.9 Gustavan, Herald of the End" },
+                "Voidclaw Hexathor": { loc: "46.7, 25.2", way: "/way #241 46.7 25.2 Voidclaw Hexathor" },
+                "Mirrorvise": { loc: "45.2, 49.2", way: "/way #241 45.2 49.2 Mirrorvise" },
+                "Saligrum the Observer": { loc: "41.8, 16.5", way: "/way #241 41.8 16.5 Saligrum the Observer" },
+            };
 
-  // --- Theme (night mode default) ---
-  const themeKey = "wowRareTimerTheme";
-  function applyTheme(theme){
-    document.body.classList.toggle("dark", theme === "dark");
-    document.getElementById("toggleThemeBtn").textContent =
-      theme === "dark" ? "☀️ Day mode" : "🌙 Night mode";
-  }
+            const anchorSelect = document.getElementById("anchorRare");
+            const anchorTimeInput = document.getElementById("anchorTime");
+            const tbody = document.getElementById("tbody");
+            const statusLine = document.getElementById("statusLine");
 
-  const savedTheme = localStorage.getItem(themeKey);
-  applyTheme(savedTheme ? savedTheme : "dark");
+            rares.forEach(r => {
+                const opt = document.createElement("option");
+                opt.value = r;
+                opt.textContent = r;
+                anchorSelect.appendChild(opt);
+            });
 
-  document.getElementById("toggleThemeBtn").onclick = () => {
-    const isDark = document.body.classList.contains("dark");
-    const next = isDark ? "light" : "dark";
-    localStorage.setItem(themeKey, next);
-    applyTheme(next);
-  };
+            const fmtTime = new Intl.DateTimeFormat(undefined, { hour: "numeric", minute: "2-digit", hour12: true });
 
-  const rares = [
-    "Redeye the Skullchewer","T'aavihan the Unbound","Ray of Putrescence","Ix the Bloodfallen",
-    "Commander Ix'vaarha","Sharfadi, Bulwark of the Night","Ez'Haadosh the Liminality",
-    "Berg the Spellfist","Corla, Herald of Twilight","Void Zealot Devinda","Asira Dawnslayer",
-    "Archbishop Benedictus","Nedrand the Eyegorger","Executioner Lynthelma",
-    "Gustavan, Herald of the End","Voidclaw Hexathor","Mirrorvise","Saligrum the Observer"
-  ];
+            function minutes(ms) { return ms / 60000; }
 
-  const rareMeta = {
-    "Redeye the Skullchewer":      { loc:"65.2, 52.2", way:"/way #241 65.2 52.2 Redeye the Skullchewer" },
-    "T'aavihan the Unbound":       { loc:"57.6, 75.6", way:"/way #241 57.6 75.6 T'aavihan the Unbound" },
-    "Ray of Putrescence":          { loc:"71.2, 29.9", way:"/way #241 71.2 29.9 Ray of Putrescence" },
-    "Ix the Bloodfallen":          { loc:"46.7, 25.2", way:"/way #241 46.7 25.2 Ix the Bloodfallen" },
-    "Commander Ix'vaarha":         { loc:"45.2, 48.8", way:"/way #241 45.2 48.8 Commander Ix'vaarha" },
-    "Sharfadi, Bulwark of the Night": { loc:"41.8, 16.5", way:"/way #241 41.8 16.5 Sharfadi, Bulwark of the Night" },
-    "Ez'Haadosh the Liminality":   { loc:"65.2, 52.2", way:"/way #241 65.2 52.2 Ez'Haadosh the Liminality" },
-    "Berg the Spellfist":          { loc:"57.6, 75.6", way:"/way #241 57.6 75.6 Berg the Spellfist" },
-    "Corla, Herald of Twilight":   { loc:"71.2, 29.9", way:"/way #241 71.2 29.9 Corla, Herald of Twilight" },
-    "Void Zealot Devinda":         { loc:"46.7, 25.2", way:"/way #241 46.7 25.2 Void Zealot Devinda" },
-    "Asira Dawnslayer":            { loc:"45.2, 49.2", way:"/way #241 45.2 49.2 Asira Dawnslayer" },
-    "Archbishop Benedictus":       { loc:"41.8, 16.5", way:"/way #241 41.8 16.5 Archbishop Benedictus" },
-    "Nedrand the Eyegorger":       { loc:"65.2, 52.2", way:"/way #241 65.2 52.2 Nedrand the Eyegorger" },
-    "Executioner Lynthelma":       { loc:"57.6, 75.6", way:"/way #241 57.6 75.6 Executioner Lynthelma" },
-    "Gustavan, Herald of the End": { loc:"71.2, 29.9", way:"/way #241 71.2 29.9 Gustavan, Herald of the End" },
-    "Voidclaw Hexathor":           { loc:"46.7, 25.2", way:"/way #241 46.7 25.2 Voidclaw Hexathor" },
-    "Mirrorvise":                  { loc:"45.2, 49.2", way:"/way #241 45.2 49.2 Mirrorvise" },
-    "Saligrum the Observer":       { loc:"41.8, 16.5", way:"/way #241 41.8 16.5 Saligrum the Observer" },
-  };
+            function parseTimeOnly12h(s) {
+                const m = /^(\d{1,2}):(\d{2})\s*(AM|PM)$/i.exec((s || "").trim());
+                if (!m) return null;
+                let h = parseInt(m[1], 10);
+                const min = parseInt(m[2], 10);
+                const ap = m[3].toUpperCase();
+                if (ap === "AM") { if (h === 12) h = 0; } else { if (h !== 12) h += 12; }
+                return { hour24: h, minute: min };
+            }
 
-  const anchorSelect = document.getElementById("anchorRare");
-  const anchorTimeInput = document.getElementById("anchorTime");
-  const tbody = document.getElementById("tbody");
+            function formatTimeOnly12h(hour24, minute) {
+                return fmtTime.format(new Date(2000, 0, 1, hour24, minute, 0));
+            }
 
-  rares.forEach(r => {
-    const opt = document.createElement("option");
-    opt.value = r;
-    opt.textContent = r;
-    anchorSelect.appendChild(opt);
-  });
-  anchorSelect.value = "Nedrand the Eyegorger";
+            function snapDownTo10(timeObj) {
+                return { hour24: timeObj.hour24, minute: Math.floor(timeObj.minute / 10) * 10 };
+            }
 
-  const fmtTime = new Intl.DateTimeFormat(undefined, { hour: "numeric", minute: "2-digit", hour12: true });
+            function buildAnchorBaseToday(timeOnly) {
+                const now = new Date();
+                return new Date(now.getFullYear(), now.getMonth(), now.getDate(), timeOnly.hour24, timeOnly.minute, 0);
+            }
 
-  function minutes(ms){ return ms / 60000; }
+            function humanRemaining(mins) {
+                if (mins <= 0 && mins >= -ACTIVE_WINDOW_MINUTES) return "ACTIVE";
+                const m = Math.floor(Math.max(0, mins));
+                return m < 60 ? `${m} min` : `${Math.floor(m / 60)}h ${m % 60}m`;
+            }
 
-  function parseTimeOnly12h(s){
-    const m = /^(\d{1,2}):(\d{2})\s*(AM|PM)$/i.exec((s || "").trim());
-    if (!m) return null;
-    let h = parseInt(m[1], 10);
-    const min = parseInt(m[2], 10);
-    const ap = m[3].toUpperCase();
-    if (ap === "AM") { if (h === 12) h = 0; } else { if (h !== 12) h += 12; }
-    return { hour24: h, minute: min };
-  }
+            function cycleMinutes() { return rares.length * ROTATION_MINUTES; }
 
-  function formatTimeOnly12h(hour24, minute){
-    return fmtTime.format(new Date(2000,0,1,hour24,minute,0));
-  }
+            function computeLastAndNext(base, now) {
+                const cycleMin = cycleMinutes();
+                const diffMin = minutes(now - base);
+                const k = Math.floor(diffMin / cycleMin);
+                const last = new Date(base.getTime() + k * cycleMin * 60000);
+                const next = new Date(last.getTime() + cycleMin * 60000);
+                return { last, next };
+            }
 
-  function snapDownTo10(timeObj){
-    return { hour24: timeObj.hour24, minute: Math.floor(timeObj.minute / 10) * 10 };
-  }
+            async function copyText(text) {
+                try {
+                    await navigator.clipboard.writeText(text);
+                    return true;
+                } catch (e) {
+                    const ta = document.createElement("textarea");
+                    ta.value = text;
+                    document.body.appendChild(ta);
+                    ta.select();
+                    try { document.execCommand("copy"); } finally { document.body.removeChild(ta); }
+                    return true;
+                }
+            }
 
-  function setAnchorTimeToNowSnapped(){
-    const now = new Date();
-    anchorTimeInput.value = formatTimeOnly12h(now.getHours(), Math.floor(now.getMinutes()/10)*10);
-  }
+            function flashCopied(btn, noteEl) {
+                const oldText = btn.textContent;
+                btn.textContent = "Copied ✅";
+                btn.disabled = true;
+                if (noteEl) noteEl.textContent = "Copied!";
+                setTimeout(() => {
+                    btn.textContent = oldText;
+                    btn.disabled = false;
+                    if (noteEl) noteEl.textContent = "";
+                }, 1200);
+            }
 
-  function buildAnchorBaseToday(timeOnly){
-    const now = new Date();
-    return new Date(now.getFullYear(), now.getMonth(), now.getDate(), timeOnly.hour24, timeOnly.minute, 0);
-  }
+            // ✅ Default schedule baseline:
+            // Berg the Spellfist spawns at 1:00, then rotation continues every 10 minutes in the rares[] order.
+            function setDefaultAnchorFromKnownSchedule() {
+                const DEFAULT_ANCHOR_RARE = "Berg the Spellfist";
+                const DEFAULT_HOUR = 1;
+                const DEFAULT_MINUTE = 0;
 
-  function humanRemaining(mins){
-    if (mins <= 0 && mins >= -ACTIVE_WINDOW_MINUTES) return "ACTIVE";
-    const m = Math.floor(Math.max(0, mins));
-    return m < 60 ? `${m} min` : `${Math.floor(m/60)}h ${m%60}m`;
-  }
+                anchorSelect.value = DEFAULT_ANCHOR_RARE;
 
-  function cycleMinutes(){ return rares.length * ROTATION_MINUTES; }
+                const now = new Date();
+                const base = new Date(now.getFullYear(), now.getMonth(), now.getDate(), DEFAULT_HOUR, DEFAULT_MINUTE, 0);
 
-  function computeLastAndNext(base, now){
-    const cycleMin = cycleMinutes();
-    const diffMin = minutes(now - base);
-    const k = Math.floor(diffMin / cycleMin);
-    const last = new Date(base.getTime() + k * cycleMin * 60000);
-    const next = new Date(last.getTime() + cycleMin * 60000);
-    return { last, next };
-  }
+                const cycleMin = cycleMinutes();
+                const diffMin = minutes(now - base);
 
-  async function copyText(text){
-    try{
-      await navigator.clipboard.writeText(text);
-      return true;
-    }catch(e){
-      const ta = document.createElement("textarea");
-      ta.value = text;
-      document.body.appendChild(ta);
-      ta.select();
-      try{ document.execCommand("copy"); } finally { document.body.removeChild(ta); }
-      return true;
-    }
-  }
+                // Move base backward/forward to the most recent cycle boundary
+                const k = Math.floor(diffMin / cycleMin);
+                const aligned = new Date(base.getTime() + k * cycleMin * 60000);
 
-  function flashCopied(btn, noteEl){
-    const oldText = btn.textContent;
-    btn.textContent = "Copied ✅";
-    btn.disabled = true;
-    if (noteEl) noteEl.textContent = "Copied!";
-    setTimeout(() => {
-      btn.textContent = oldText;
-      btn.disabled = false;
-      if (noteEl) noteEl.textContent = "";
-    }, 1200);
-  }
+                // Snap down to :00/:10/:20/:30/:40/:50 to match your UI rule
+                const snapped = snapDownTo10({ hour24: aligned.getHours(), minute: aligned.getMinutes() });
+                anchorTimeInput.value = formatTimeOnly12h(snapped.hour24, snapped.minute);
+            }
 
-  function render(){
-    const anchorIndex = rares.indexOf(anchorSelect.value);
-    const t = parseTimeOnly12h(anchorTimeInput.value);
-    if (anchorIndex < 0 || !t){
-      tbody.innerHTML = `<tr><td colspan="5"><b>Invalid anchor time.</b></td></tr>`;
-      return;
-    }
+            function render() {
+                const anchorIndex = rares.indexOf(anchorSelect.value);
+                const t = parseTimeOnly12h(anchorTimeInput.value);
+                if (anchorIndex < 0 || !t) {
+                    tbody.innerHTML = `<tr><td colspan="5"><b>Invalid anchor time.</b></td></tr>`;
+                    return;
+                }
 
-    const snapped = snapDownTo10(t);
-    anchorTimeInput.value = formatTimeOnly12h(snapped.hour24, snapped.minute);
+                const snapped = snapDownTo10(t);
+                anchorTimeInput.value = formatTimeOnly12h(snapped.hour24, snapped.minute);
 
-    const anchorBase = buildAnchorBaseToday(snapped);
-    const now = new Date();
+                const anchorBase = buildAnchorBaseToday(snapped);
+                const now = new Date();
 
-    const rows = rares.map((rare, idx) => {
-      const base = new Date(anchorBase.getTime() + (idx - anchorIndex) * ROTATION_MINUTES * 60000);
-      const { last, next } = computeLastAndNext(base, now);
-      const sinceLast = minutes(now - last);
-      const untilNext = minutes(next - now);
-      const isActive = sinceLast >= 0 && sinceLast <= ACTIVE_WINDOW_MINUTES;
-      return {
-        rare,
-        isActive,
-        displayTime: isActive ? last : next,
-        remaining: isActive ? -sinceLast : untilNext
-      };
-    }).sort((a,b)=> (a.isActive? -1:a.remaining) - (b.isActive? -1:b.remaining));
+                const rows = rares.map((rare, idx) => {
+                    const base = new Date(anchorBase.getTime() + (idx - anchorIndex) * ROTATION_MINUTES * 60000);
+                    const { last, next } = computeLastAndNext(base, now);
+                    const sinceLast = minutes(now - last);
+                    const untilNext = minutes(next - now);
+                    const isActive = sinceLast >= 0 && sinceLast <= ACTIVE_WINDOW_MINUTES;
+                    return {
+                        rare,
+                        isActive,
+                        displayTime: isActive ? last : next,
+                        remaining: isActive ? -sinceLast : untilNext
+                    };
+                }).sort((a, b) => (a.isActive ? -1 : a.remaining) - (b.isActive ? -1 : b.remaining));
 
-    tbody.innerHTML = "";
-    rows.forEach(r=>{
-      const tr = document.createElement("tr");
-      if (r.isActive) tr.className = "activeRow";
+                tbody.innerHTML = "";
+                rows.forEach(r => {
+                    const tr = document.createElement("tr");
+                    if (r.isActive) tr.className = "activeRow";
 
-      const meta = rareMeta[r.rare] || { loc:"", way:"" };
+                    const meta = rareMeta[r.rare] || { loc: "", way: "" };
 
-      const tdRare = document.createElement("td");
-      tdRare.textContent = r.rare;
-      if (r.isActive){
-        const badge = document.createElement("span");
-        badge.className = "badge";
-        badge.textContent = "ACTIVE";
-        tdRare.appendChild(badge);
-      }
+                    const tdRare = document.createElement("td");
+                    tdRare.textContent = r.rare;
+                    if (r.isActive) {
+                        const badge = document.createElement("span");
+                        badge.className = "badge";
+                        badge.textContent = "ACTIVE";
+                        tdRare.appendChild(badge);
+                    }
 
-      const tdTime = document.createElement("td");
-      tdTime.textContent = fmtTime.format(r.displayTime);
+                    const tdTime = document.createElement("td");
+                    tdTime.textContent = fmtTime.format(r.displayTime);
 
-      const tdRemain = document.createElement("td");
-      tdRemain.textContent = humanRemaining(r.remaining);
+                    const tdRemain = document.createElement("td");
+                    tdRemain.textContent = humanRemaining(r.remaining);
 
-      const tdLoc = document.createElement("td");
-      tdLoc.textContent = meta.loc || "";
+                    const tdLoc = document.createElement("td");
+                    tdLoc.textContent = meta.loc || "";
 
-      const tdCopy = document.createElement("td");
-      if (meta.way){
-        const wrap = document.createElement("span");
-        wrap.className = "copyWrap";
+                    const tdCopy = document.createElement("td");
+                    if (meta.way) {
+                        const wrap = document.createElement("span");
+                        wrap.className = "copyWrap";
 
-        const btn = document.createElement("button");
-        btn.className = "copyBtn";
-        btn.textContent = "Copy location";
-        btn.title = "Copies a /way command to your clipboard";
+                        const btn = document.createElement("button");
+                        btn.className = "copyBtn";
+                        btn.textContent = "Copy location";
+                        btn.title = "Copies a /way command to your clipboard";
 
-        const note = document.createElement("span");
-        note.className = "copyNote";
-        note.textContent = "";
+                        const note = document.createElement("span");
+                        note.className = "copyNote";
+                        note.textContent = "";
 
-        btn.onclick = async () => {
-          const ok = await copyText(meta.way);
-          if (ok) flashCopied(btn, note);
-          else { note.textContent = "Failed"; setTimeout(()=> note.textContent="", 1500); }
-        };
+                        btn.onclick = async () => {
+                            const ok = await copyText(meta.way);
+                            if (ok) flashCopied(btn, note);
+                            else { note.textContent = "Failed"; setTimeout(() => note.textContent = "", 1500); }
+                            statusLine.textContent = ok ? `Copied waypoint for ${r.rare}` : "Copy failed.";
+                            setTimeout(() => { statusLine.textContent = ""; }, 1500);
+                        };
 
-        wrap.appendChild(btn);
-        wrap.appendChild(note);
-        tdCopy.appendChild(wrap);
-      } else {
-        tdCopy.textContent = "";
-      }
+                        wrap.appendChild(btn);
+                        wrap.appendChild(note);
+                        tdCopy.appendChild(wrap);
+                    } else {
+                        tdCopy.textContent = "";
+                    }
 
-      tr.append(tdRare, tdTime, tdRemain, tdLoc, tdCopy);
-      tbody.appendChild(tr);
-    });
-  }
+                    tr.append(tdRare, tdTime, tdRemain, tdLoc, tdCopy);
+                    tbody.appendChild(tr);
+                });
+            }
 
-  document.getElementById("refreshBtn").onclick = render;
-  document.getElementById("setNowBtn").onclick = () => { setAnchorTimeToNowSnapped(); render(); };
+            document.getElementById("refreshBtn").onclick = render;
 
-  setAnchorTimeToNowSnapped();
-  render();
-  setInterval(render, 1000);
-})();
-</script>
+            // Manual override button still works exactly as before
+            document.getElementById("setNowBtn").onclick = () => {
+                const now = new Date();
+                anchorTimeInput.value = formatTimeOnly12h(now.getHours(), Math.floor(now.getMinutes() / 10) * 10);
+                render();
+            };
+
+            // ✅ Initial default: known published schedule
+            setDefaultAnchorFromKnownSchedule();
+            render();
+            setInterval(render, 1000);
+        })();
+    </script>
 </body>
 </html>
