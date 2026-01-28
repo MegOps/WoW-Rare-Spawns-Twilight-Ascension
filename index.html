@@ -248,8 +248,8 @@
     th, td{ white-space: nowrap; }
   }
 
-  /* Slightly wider breakpoint to keep existing behavior */
-  @media (max-width: 900px){
+  /* ✅ FIX: only apply the "wrap + 360px basis" layout to TABLET widths, not phones */
+  @media (min-width: 681px) and (max-width: 900px){
     .anchorRow{ flex-wrap: wrap; }
     .field.rare, .field.time { flex: 1 1 360px; }
     .themeBtn{ top: 8px; }
@@ -261,7 +261,7 @@
   <div class="card">
     <div class="headerRow">
       <div>
-        <h1>WoW Twilight Ascension Rare Spawn Timer</h1>
+        <h1>WoW Rare Spawn Timer</h1>
         <p class="sub">10-minute rotation. Sorted by soonest spawn.</p>
       </div>
       <button class="themeBtn" id="toggleThemeBtn" title="Toggle theme">🌙 Night mode</button>
